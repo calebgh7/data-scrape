@@ -140,7 +140,7 @@ for resultBox in resultBoxes:
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
 # Load credentials from the service account key file
-creds = ServiceAccountCredentials.from_json_keyfile_name(service_account_info, scope)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
 
 # Open the Google Sheet by name and select the first sheet
