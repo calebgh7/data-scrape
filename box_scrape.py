@@ -9,21 +9,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import os
+import json
 import time
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
-
-# Authenticate and create the PyDrive client
-gauth = GoogleAuth()
-gauth.LoadCredentialsFile("credentials.json")
-if gauth.credentials is None or gauth.access_token_expired:
-    gauth.LocalWebserverAuth()  # Re-authenticate if needed
-    gauth.SaveCredentialsFile("credentials.json")
-else:
-    gauth.Authorize()
-
-drive = GoogleDrive(gauth)
-
+import gspread
+from gspread_dataframe import set_with_dataframe
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import pandas as pd
 
 # Get the current date and time
 now = datetime.now()
@@ -33,6 +25,9 @@ print(f"Today's date is {today}")
 #hide
 myMlsUsername = os.environ['MLS_USER']
 myMlsPassword = os.environ['MLS_PASS']
+
+# Load service account JSON from the environment variable
+service_account_info = json.loads(os.environ['SERVICE_ACCOUNT_JSON'])
 
 # Use the Chrome webdriver
 driver = webdriver.Chrome()
@@ -125,7 +120,6 @@ for resultBox in resultBoxes:
     bathrooms = find_text_or_default(resultBox, 'td', {'class': 'gridtd gridtd-std extracolumns column_total_bath'})
     yearBuilt = find_text_or_default(resultBox, 'td', {'class': 'gridtd gridtd-std extracolumns column_yr_built'})
     
-
     # Create a mini DataFrame to store the scraped data
     miniFrame=pd.DataFrame(columns=list(listingData.columns),data=[[mls, address, csz, status, price, daysOnMarket, bedrooms, bathrooms, yearBuilt]])
     listingData=pd.concat([listingData, miniFrame])
@@ -134,17 +128,21 @@ for resultBox in resultBoxes:
     listingData['Days on Market'] = pd.to_numeric(listingData['Days on Market'], errors='coerce')
     listingData = listingData.sort_values(by='Days on Market', ascending=False)
 
-# Save the scraped data to a CSV file
-try:
-    listingData.to_csv(f"/Users/calebhobbs/Desktop/CodingProjects/website_login/FlipListingData/FlipListingData_{today}.csv", index=False)
-    print(f"Scraped data saved to FlipListingData_{today}.csv successfully")
-except:
-    print("Error: unable to save scraped data to csv file")
+# Define the scope for Google Sheets and Google Drive
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Create a file in Google Drive
-file_to_upload = drive.CreateFile({'title': 'uploaded_file.txt'})  # Change file name as needed
-file_to_upload.SetContentFile('path/to/your/local/file.txt')  # Path to the file you want to upload
-file_to_upload.Upload()
+# Load credentials from the service account key file
+creds = ServiceAccountCredentials.from_json_keyfile_name(service_account_info, scope)
+client = gspread.authorize(creds)
+
+# Open the Google Sheet by name and select the first sheet
+sheet = client.open("ScrapeResults").sheet1
+# Clear the entire sheet before writing new data
+sheet.batch_clear(["A2:I1000"])
+
+# Update the sheet with the DataFrame content
+set_with_dataframe(sheet, listingData)  # This writes the DataFrame to the Google Sheet
+print("Google Sheet updated successfully")
 
 # Quit the driver
 driver.quit()
