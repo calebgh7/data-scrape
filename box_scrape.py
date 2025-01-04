@@ -8,6 +8,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 import os
 import json
 import time
@@ -29,8 +31,14 @@ myMlsPassword = os.environ['MLS_PASS']
 # Load service account JSON from the environment variable
 service_account_info = json.loads(os.environ['SERVICE_ACCOUNT_JSON'])
 
+# Set Chrome options for headless mode
+chrome_options = Options()
+chrome_options.add_argument("--headless")  # Run in headless mode
+chrome_options.add_argument("--no-sandbox")  # Required for running in GitHub Actions
+chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
+
 # Use the Chrome webdriver
-driver = webdriver.Chrome()
+driver = webdriver.Chrome(options=chrome_options)
 
 # Function to login to the Flexmls website
 def login(url, usernameId, username, passwordId, password):
