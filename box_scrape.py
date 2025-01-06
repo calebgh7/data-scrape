@@ -1,4 +1,4 @@
-# Activate venv in terminal: source /Users/calebhobbs/Desktop/CodingProjects/venv/bin/activate
+# Hello
 
 
 from datetime import datetime
