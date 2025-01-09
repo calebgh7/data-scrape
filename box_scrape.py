@@ -144,7 +144,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, s
 client = gspread.authorize(creds)
 
 # Open the Google Sheet by name and select the first sheet
-sheet = client.open("ScrapeResults").sheet1
+sheet = client.open("Buy Box Search Results").sheet1
 # Clear the entire sheet before writing new data
 sheet.batch_clear(["A2:I1000"])
 
